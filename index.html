@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Noise Level Tracker is a site which tracks level of noise">
+    <title>Noise Level Tracker</title>
+</head>
+
+<body>
+    <h1>Noise Level Tracker</h1>
+    <p>Current noise level: <span id="noise-level">0</span> dB</p>
+    <button onclick="startTracking()">Start Tracking</button>
+    <button onclick="stopTracking()">Stop Tracking</button>
+    
+    <script src="app.js"></script>
+    <script>
+    
+        let intervalId;
+        let currentNoiseLevel = 0;
+
+        function startTracking() {
+            if (!intervalId) {
+                intervalId = setInterval(updateNoiseLevel, 1000); // update noise level every second
+            }
+        }
+        function stopTracking() {
+            clearInterval(intervalId);
+            intervalId = null;
+            currentNoiseLevel = 0;
+            updateNoiseLevel();
+        }
+        function updateNoiseLevel() {
+            // replace this with actual noise level detection code
+            currentNoiseLevel += Math.floor(Math.random() * 10);
+            document.getElementById("noise-level").innerHTML = currentNoiseLevel;
+        }
+    </script>
+</body>
+
+</html>
