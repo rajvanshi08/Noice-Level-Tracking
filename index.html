@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Noise Level Tracker is a site which tracks level of noise">
     <title>Noise Level Tracker</title>
     <style>
         body {
@@ -32,33 +32,77 @@
 <body>
     <div class="container">
         <h1>Noise Level Tracker</h1>
-        <p>Current noise level: <span id="noise-level">0</span> dB</p>
-        <button onclick="startTracking()">Start Tracking</button>
-        <button onclick="stopTracking()">Stop Tracking</button>
+        <div>
+            <p id="volume">0 dB</p>
+            <button id="start-btn" onclick="startAudio()">Start</button>
+            <button id="stop-btn" onclick="stopAudio()" disabled>Stop</button>
+        </div>
     </div>
-    <script src="app.js"></script>
     <script>
+        // Initialize variables
+        let audioContext, stream, source, processor;
 
-        let intervalId;
-        let currentNoiseLevel = 0;
+        // Function to start audio processing
+        function startAudio() {
+            // Disable start button, enable stop button
+            document.getElementById("start-btn").disabled = true;
+            document.getElementById("stop-btn").disabled = false;
 
-        function startTracking() {
-            if (!intervalId) {
-                intervalId = setInterval(updateNoiseLevel, 1000); // update noise level every second
+            // Create audio context
+            audioContext = new AudioContext();
+
+            // Get microphone input
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function (micStream) {
+                    // Save stream for stopping later
+                    stream = micStream;
+
+                    // Create audio source from mic input
+                    source = audioContext.createMediaStreamSource(micStream);
+
+                    // Create processor to get volume level
+                    processor = audioContext.createScriptProcessor(4096, 1, 1);
+                    processor.connect(audioContext.destination);
+                    source.connect(processor);
+
+                    // Set up volume processing
+                    processor.onaudioprocess = volumeAudioProcess;
+                })
+                .catch(function (err) {
+                    console.error(err);
+                });
+        }
+
+        // Function to stop audio processing
+        function stopAudio() {
+            // Enable start button, disable stop button
+            document.getElementById("start-btn").disabled = false;
+            document.getElementById("stop-btn").disabled = true;
+
+            // Stop audio processing
+            source.disconnect(processor);
+            processor.disconnect(audioContext.destination);
+            stream.getTracks()[0].stop();
+
+            // Clear volume display
+            document.getElementById("volume").innerHTML = "0 dB";
+        }
+
+        // Function to process volume level
+        function volumeAudioProcess(event) {
+            // Get volume data from event
+            const inputBuffer = event.inputBuffer;
+            const inputData = inputBuffer.getChannelData(0);
+            let sum = 0.0;
+            for (let i = 0; i < inputData.length; i++) {
+                sum += inputData[i] * inputData[i];
             }
-        }
-        function stopTracking() {
-            clearInterval(intervalId);
-            intervalId = null;
-            currentNoiseLevel = 0;
-            updateNoiseLevel();
-        }
-        function updateNoiseLevel() {
-            // replace this with actual noise level detection code
-            currentNoiseLevel += Math.floor(Math.random() * 10);
-            document.getElementById("noise-level").innerHTML = currentNoiseLevel;
+            const rms = Math.sqrt(sum / inputData.length);
+            const db = 20 * Math.log10(rms);
+
+            // Display volume level
+            document.getElementById("volume").innerHTML = db.toFixed(1) + " dB";
         }
     </script>
 </body>
-
 </html>
